@@ -39,7 +39,7 @@
     font-weight:900;
     letter-spacing:0.02em;
     margin:0;
-    color:var(--gold);
+    color:#fff;
     white-space:nowrap;
   }
 
@@ -78,37 +78,30 @@
   .seg-label{
     position:absolute;
     top:50%; left:50%;
-    width:39%;
-    height:0;
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    transform-origin:left center;
+    width:0; height:0;
     pointer-events:none;
   }
-  .seg-label .stack{
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    gap:5px;
-    max-width:102px;
+  .seg-label .r-item{
+    position:absolute;
+    top:0; left:0;
   }
   .seg-label .logo-badge{
-    width:27px; height:27px;
-    border-radius:7px;
+    width:34px; height:34px;
+    border-radius:9px;
     overflow:hidden;
     flex:none;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,0.55);
   }
   .seg-label .logo-badge img{ width:100%; height:100%; display:block; object-fit:cover; }
   .seg-label span{
     display:block;
     color:#fff;
     font-weight:800;
-    font-size:10.5px;
-    line-height:1.1;
-    text-align:left;
+    font-size:11px;
+    line-height:1;
+    white-space:nowrap;
     text-transform:uppercase;
-    letter-spacing:0.01em;
+    letter-spacing:0;
   }
 
   .hub{
@@ -321,12 +314,12 @@
   // money-making plays for on-camera reveals.
   const SEGMENTS = [
     { label: "AD SPY",        logo: "assets/logos/facebook.svg" },
-    { label: "HOOK SPY",      logo: "assets/logos/tiktok.svg" },
-    { label: "CLOUT CHECK",   logo: "assets/logos/instagram.png" },
+    { label: "VIRAL VIDEOS",  logo: "assets/logos/tiktok.svg" },
+    { label: "BRAND DEALS",   logo: "assets/logos/instagram.png" },
     { label: "DEAL BOT",      logo: "assets/logos/amazon.svg" },
     { label: "LOCAL LEADS",   logo: "assets/logos/googlemaps.svg" },
     { label: "COLD EMAIL",    logo: "assets/logos/gmail.svg" },
-    { label: "JOB SNIPE",     logo: "assets/logos/linkedin.png" },
+    { label: "GET A JOB",     logo: "assets/logos/linkedin.png" },
     { label: "SHOPIFY SPY",   logo: "assets/logos/shopify.svg" }
   ];
 
@@ -361,6 +354,21 @@
     return badge;
   }
 
+  // Logo sits near the rim (outer), label text sits closer to the hub (inner) —
+  // both measured as pixel distance from wheel center along the wedge's own
+  // bisector, so the flip-for-readability rotation below can't swap them.
+  const dialRadius = dial.clientWidth / 2;
+  const R_TEXT = dialRadius * 0.24;
+  const R_LOGO = dialRadius * 0.76;
+
+  function radialItem(radius, el){
+    const item = document.createElement('div');
+    item.className = 'r-item';
+    item.style.transform = `translate(${radius}px, -50%)`;
+    item.appendChild(el);
+    return item;
+  }
+
   SEGMENTS.forEach((s, i) => {
     const mid = i * SEG_ANGLE + SEG_ANGLE / 2 - 90;
     const wrap = document.createElement('div');
@@ -369,16 +377,20 @@
 
     const normalizedMid = ((mid % 360) + 360) % 360;
     const flip = normalizedMid > 90 && normalizedMid < 270;
+    const flipStyle = flip ? 'rotate(180deg)' : '';
 
-    const stack = document.createElement('div');
-    stack.className = 'stack';
-    if (flip) stack.style.transform = 'rotate(180deg)';
+    const logoFlip = document.createElement('div');
+    logoFlip.style.transform = flipStyle;
+    logoFlip.appendChild(logoBadge(s.logo, s.label));
 
-    stack.appendChild(logoBadge(s.logo, s.label));
     const span = document.createElement('span');
     span.textContent = s.label;
-    stack.appendChild(span);
-    wrap.appendChild(stack);
+    const textFlip = document.createElement('div');
+    textFlip.style.transform = flipStyle;
+    textFlip.appendChild(span);
+
+    wrap.appendChild(radialItem(R_TEXT, textFlip));
+    wrap.appendChild(radialItem(R_LOGO, logoFlip));
     dial.appendChild(wrap);
   });
 
