@@ -93,7 +93,7 @@
     display:block;
     color:#fff;
     font-weight:800;
-    font-size:11.5px;
+    font-size:14.5px;
     line-height:1;
     white-space:nowrap;
     text-transform:uppercase;
@@ -324,9 +324,6 @@
 
   const N = SEGMENTS.length;
   const SEG_ANGLE = 360 / N;
-  const SEAM_COLOR = "#ffffff";
-  const SEAM = 0.7;
-
   const dial = document.getElementById('dial');
   const ucList = document.getElementById('ucList');
 
@@ -334,9 +331,7 @@
   for (let i = 0; i < N; i++) {
     const start = i * SEG_ANGLE;
     const end = (i + 1) * SEG_ANGLE;
-    stops.push(`${SEAM_COLOR} ${start}deg ${start + SEAM}deg`);
-    stops.push(`${SEGMENTS[i].color} ${start + SEAM}deg ${end - SEAM}deg`);
-    stops.push(`${SEAM_COLOR} ${end - SEAM}deg ${end}deg`);
+    stops.push(`${SEGMENTS[i].color} ${start}deg ${end}deg`);
   }
   dial.style.background = `conic-gradient(${stops.join(', ')})`;
 
@@ -361,7 +356,7 @@
   const LOGO_SIZE = 37;
 
   const measurer = document.createElement('span');
-  measurer.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-weight:800;font-size:11.5px;text-transform:uppercase;font-family:inherit;';
+  measurer.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-weight:800;font-size:14.5px;text-transform:uppercase;font-family:inherit;';
   document.body.appendChild(measurer);
   let maxTextWidth = 0;
   SEGMENTS.forEach(s => {
