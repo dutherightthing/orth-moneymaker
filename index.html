@@ -312,20 +312,20 @@
   // Source: Orthogonal "Use Case Playground" sheet, reframed as recognizable
   // money-making plays for on-camera reveals.
   const SEGMENTS = [
-    { label: "AD SPY",        logo: "assets/logos/facebook.svg",   color: "#FF5A5F" },
-    { label: "VIRAL VIDEOS",  logo: "assets/logos/tiktok.svg",     color: "#4DA6FF" },
-    { label: "BRAND DEALS",   logo: "assets/logos/instagram.png",  color: "#FFC145" },
-    { label: "DEAL BOT",      logo: "assets/logos/amazon.svg",     color: "#4CD787" },
-    { label: "LOCAL LEADS",   logo: "assets/logos/googlemaps.svg", color: "#9B6BFF" },
-    { label: "COLD EMAIL",    logo: "assets/logos/gmail.svg",      color: "#FF6FA5" },
-    { label: "GET A JOB",     logo: "assets/logos/linkedin.png",   color: "#22C6B6" },
-    { label: "SHOPIFY SPY",   logo: "assets/logos/shopify.svg",    color: "#FF9F43" }
+    { label: "META ADS SPY",  logo: "assets/logos/facebook.svg",   color: "#E8483F" },
+    { label: "VIRAL VIDEOS",  logo: "assets/logos/tiktok.svg",     color: "#2F80ED" },
+    { label: "BRAND DEALS",   logo: "assets/logos/instagram.png",  color: "#F2B705" },
+    { label: "DEAL BOT",      logo: "assets/logos/amazon.svg",     color: "#27AE60" },
+    { label: "LOCAL LEADS",   logo: "assets/logos/googlemaps.svg", color: "#8E44AD" },
+    { label: "COLD EMAIL",    logo: "assets/logos/gmail.svg",      color: "#E0218A" },
+    { label: "GET A JOB",     logo: "assets/logos/linkedin.png",   color: "#17A398" },
+    { label: "SHOPIFY SPY",   logo: "assets/logos/shopify.svg",    color: "#F2622E" }
   ];
 
   const N = SEGMENTS.length;
   const SEG_ANGLE = 360 / N;
-  const SEAM_COLOR = "rgba(255,255,255,0.28)";
-  const SEAM = 0.6;
+  const SEAM_COLOR = "#ffffff";
+  const SEAM = 0.7;
 
   const dial = document.getElementById('dial');
   const ucList = document.getElementById('ucList');
@@ -370,8 +370,12 @@
   });
   measurer.remove();
 
-  const R_TEXT = hubRadius + 8;
-  const R_LOGO = R_TEXT + maxTextWidth + 5;
+  // Anchor the LOGO to the rim (not to the hub) so the pair scales with however
+  // big the wheel actually renders — anchoring from the hub instead produced a
+  // fixed small radius that left the whole outer ring of the wheel empty on
+  // larger screens. Text sits just inside the logo, working backward from it.
+  const R_LOGO = dialRadius - LOGO_SIZE - 8;
+  const R_TEXT = Math.max(hubRadius + 8, R_LOGO - maxTextWidth - 8);
 
   function radialItem(radius, el){
     const item = document.createElement('div');
