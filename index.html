@@ -229,6 +229,8 @@
   .uc-row.selected{ background:var(--surface); }
   .uc-row input{ display:none; }
 
+  .sound-row{ width:100%; font-family:inherit; text-align:left; }
+
   .edit-btn{
     position:absolute; right:6px; top:50%; transform:translateY(-50%);
     width:26px; height:26px; border:none; border-radius:7px;
@@ -341,6 +343,10 @@
     </div>
 
     <div class="use-case-list disabled" id="ucList"></div>
+
+    <h2 class="spaced">Result sound</h2>
+    <p class="sub">Plays when the wheel lands. Tap to preview and select.</p>
+    <div class="use-case-list" id="soundList"></div>
 
     <h2 class="spaced">Appearance</h2>
     <p class="sub">Switch between dark and light.</p>
@@ -685,6 +691,87 @@
     setModeUI(); saveState();
   });
 
+  // ---- sound: result reveal (user-selectable) + synthesized spin ticks ----
+  const RESULT_SOUNDS = [
+    { id: 'fahh',             name: 'Fahhh',             src: 'assets/sounds/fahh.mp3' },
+    { id: 'vine-boom',        name: 'Vine Boom',         src: 'assets/sounds/vine-boom.mp3' },
+    { id: 'rizz',             name: 'Rizz',              src: 'assets/sounds/rizz.mp3' },
+    { id: 'anime-wow',        name: 'Anime Wow',         src: 'assets/sounds/anime-wow.mp3' },
+    { id: 'metal-pipe-clang', name: 'Metal Pipe Clang',  src: 'assets/sounds/metal-pipe-clang.mp3' }
+  ];
+
+  let resultSoundId = localStorage.getItem('omm_result_sound') || RESULT_SOUNDS[0].id;
+  const soundList = document.getElementById('soundList');
+
+  function setSoundUI(){
+    Array.from(soundList.children).forEach((row, i) => {
+      row.classList.toggle('selected', RESULT_SOUNDS[i].id === resultSoundId);
+    });
+  }
+
+  function selectResultSound(id, preview){
+    resultSoundId = id;
+    localStorage.setItem('omm_result_sound', id);
+    setSoundUI();
+    if (preview) playResultSound();
+  }
+
+  function playResultSound(){
+    const s = RESULT_SOUNDS.find(x => x.id === resultSoundId);
+    if (!s) return;
+    new Audio(s.src).play().catch(() => {});
+  }
+
+  RESULT_SOUNDS.forEach(s => {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'uc-row sound-row';
+    row.textContent = s.name;
+    row.addEventListener('click', () => selectResultSound(s.id, true));
+    soundList.appendChild(row);
+  });
+  setSoundUI();
+
+  // Spin-in-progress sound is synthesized (Web Audio tick) rather than a
+  // looping asset — no extra file to fetch, and the tick cadence just needs
+  // to slow down over SPIN_DURATION_MS to read as "wheel decelerating".
+  let audioCtx = null;
+  function ensureAudioCtx(){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTick(){
+    const ctx = ensureAudioCtx();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(900, t);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+
+  const SPIN_DURATION_MS = 4400; // must match .dial transition-duration
+
+  function startSpinTicks(){
+    const start = performance.now();
+    let stopped = false;
+    (function schedule(){
+      if (stopped) return;
+      const frac = Math.min((performance.now() - start) / SPIN_DURATION_MS, 1);
+      if (frac >= 1) return;
+      playTick();
+      setTimeout(schedule, 35 + frac * frac * 260); // gap widens as wheel slows
+    })();
+    return () => { stopped = true; };
+  }
+
   // ---- spin logic ----
   const spinBtn = document.getElementById('spinBtn');
   const resultBackdrop = document.getElementById('resultBackdrop');
@@ -708,9 +795,10 @@
     document.getElementById('rTitle').textContent = s.label;
     resultBackdrop.classList.add('open');
     celebrate();
+    playResultSound();
   }
 
-  spinBtn.addEventListener('click', () => {
+  function doSpin(){
     if (spinning) return;
     spinning = true;
     spinBtn.disabled = true;
@@ -726,9 +814,11 @@
     rotation += extraSpins * 360 + neededForward;
 
     dial.style.transform = `rotate(${rotation}deg)`;
+    const stopTicks = startSpinTicks();
 
     const onDone = () => {
       dial.removeEventListener('transitionend', onDone);
+      stopTicks();
       const normalized = ((rotation % 360) + 360) % 360;
       dial.style.transition = 'none';
       dial.style.transform = `rotate(${normalized}deg)`;
@@ -741,10 +831,22 @@
       showResult(targetIndex);
     };
     dial.addEventListener('transitionend', onDone);
-  });
+  }
+
+  spinBtn.addEventListener('click', doSpin);
 
   document.getElementById('againBtn').addEventListener('click', () => {
     resultBackdrop.classList.remove('open');
+  });
+
+  // Spacebar spins the wheel from anywhere, except while typing in a field.
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space') return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return;
+    e.preventDefault();
+    resultBackdrop.classList.remove('open');
+    doSpin();
   });
 </script>
 </body>
